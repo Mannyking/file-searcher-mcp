@@ -3,6 +3,7 @@ from pathlib import Path
 
 mcp = MCPServer("File Searcher")
 
+
 @mcp.tool()
 def search_files(directory: str, pattern: str) -> list[str]:
     """Recursively find files matching a glob pattern, such as '*.py'."""
@@ -15,6 +16,36 @@ def search_files(directory: str, pattern: str) -> list[str]:
         str(path)
         for path in root.rglob(pattern)
         if path.is_file()
+    ]
+
+
+@mcp.tool()
+def read_file(file_path: str) -> str:
+    """Read a UTF-8 file and return its contents up to first 10,000 characters."""
+    path = Path(file_path).expanduser().resolve()
+
+    if not path.is_file():
+        raise ValueError(f"Not a file: {file_path}")
+
+    content = path.read_text(encoding="utf-8")
+
+    return content[:10000]
+
+
+@mcp.tool()
+def list_directory(directory: str) -> list[dict[str, str]]:
+    """List immediate directory entries with their name and types"""
+    root = Path(directory).expanduser().resolve()
+
+    if not root.is_dir():
+        raise ValueError(f"Not a directory: {directory}")
+
+    return [
+        {
+            "name": entry.name,
+            "type": "directory" if entry.is_dir() else "file"
+        }
+        for entry in sorted(root.iterdir(), key=lambda entry: entry.name.lower())
     ]
 
 
