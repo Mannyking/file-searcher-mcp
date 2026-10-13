@@ -49,6 +49,23 @@ def list_directory(directory: str) -> list[dict[str, str]]:
     ]
 
 
+
+@mcp.resource("project://guide", name="Project Guide")
+def project_guide() -> str:
+    """Return the setup guide for this project"""
+
+    path = Path(__file__).resolve().parent / "GUIDE.md"
+    return path.read_text(encoding="utf-8")
+
+
+@mcp.prompt()
+def explain_file(file_path: str) -> str:
+    """Create instructions for explaining a file"""
+    return (
+        f"Read the file at {file_path} using the read_file tool, "
+        "then explain its purpose and main components in plain language"
+    )
+
+
 if __name__ == "__main__":
-    # print(ROOT)
     mcp.run(transport="stdio")
