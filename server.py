@@ -90,17 +90,31 @@ def search_text(
 
     return matches
 
+
 @mcp.tool()
-def read_file(file_path: str) -> str:
-    """Read a UTF-8 file and return its contents up to first 10,000 characters."""
+def read_file(
+    file_path: str,
+    start_line: int = 1,
+    end_line: int | None = None,
+) -> str:
+    """Read a UTF-8 file, optionally selecting an inclusive line range.
+
+    Line numbers start at 1. Omit end_line to read through the end.
+    Returns at most 10,000 characters.
+    """
     path = Path(file_path).expanduser().resolve()
 
     if not path.is_file():
         raise ValueError(f"Not a file: {file_path}")
+    if start_line < 1:
+        raise ValueError("start_line must be at least 1")
+    if end_line is not None and end_line < start_line:
+        raise ValueError("end_line must be at least start_line")
 
-    content = path.read_text(encoding="utf-8")
+    lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
+    selected: list[str] = lines[(start_line - 1):end_line]
 
-    return content[:10000]
+    return "".join(selected)[:10000]
 
 
 @mcp.tool()
@@ -120,7 +134,6 @@ def list_directory(directory: str) -> list[dict[str, str]]:
     ]
 
 
-
 @mcp.resource("project://guide", name="Project Guide")
 def project_guide() -> str:
     """Return the setup guide for this project"""
@@ -129,12 +142,37 @@ def project_guide() -> str:
     return path.read_text(encoding="utf-8")
 
 
+@mcp.resource("project://overview", name="Project Overview")
+def project_overview() -> str:
+    """A brief description of this project."""
+    return (
+        "File searcher is an MCP server for finding files, searching their "
+        "contents, reading text, and inspecting file metadata."
+    )
+
+
 @mcp.prompt()
 def explain_file(file_path: str) -> str:
     """Create instructions for explaining a file"""
     return (
         f"Read the file at {file_path} using the read_file tool, "
         "then explain its purpose and main components in plain language"
+    )
+
+
+@mcp.prompt()
+def find_implementation(topic: str, directory: str = ".") -> str:
+    """Create a workflow for finding and explaining an implementation."""
+    return (
+        f"Find where {topic!r} is implemented in {directory!r}.\n"
+        "1. Use list_directory to inspect the project structure.\n"
+        "2. Use search_files to locate relevant source files.\n"
+        "3. Use search_text to find relevant code and line numbers.\n"
+        "4. Use file_info to check relevant files before reading them.\n"
+        "5. Use read_file with line ranges to inspect matching code "
+        "and its surrounding context.\n"
+        "Explain what you found, citing file paths and line numbers. "
+        "If you cannot find the implementation, say so."
     )
 
 
