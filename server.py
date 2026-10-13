@@ -4,12 +4,26 @@ from pathlib import Path
 from mcp.server import MCPServer
 
 mcp = MCPServer("File Searcher")
+ROOT = Path(__file__).resolve().parent
+
+
+def resolve_path(value: str) -> Path:
+    path = Path(value).expanduser()
+
+    if not path.is_absolute():
+        path = ROOT / path
+
+    return path.resolve()
 
 
 @mcp.tool()
 def file_info(file_path: str) -> dict[str, str | int]:
-    """Return a file's name, extension, size in bytes, and modification time."""
-    path = Path(file_path).expanduser().resolve()
+    """Return a file's name, extension, size in bytes, and modification time.
+    
+    Relative paths start inside the server's project root.
+    """
+
+    path = resolve_path(value=file_path)
 
     if not path.is_file():
         raise ValueError(f"Not a file: {file_path}")
@@ -30,8 +44,12 @@ def file_info(file_path: str) -> dict[str, str | int]:
 
 @mcp.tool()
 def search_files(directory: str, pattern: str) -> list[str]:
-    """Recursively find files matching a glob pattern, such as '*.py'."""
-    root = Path(directory).expanduser().resolve()
+    """Recursively find files matching a glob pattern, such as '*.py'.
+    
+    Relative paths start inside the server's project root.
+    """
+
+    root = resolve_path(value=directory)
 
     if not root.is_dir():
         raise ValueError(f"Not a directory: {directory}")
@@ -53,8 +71,11 @@ def search_text(
     """Find literal, case-sensitive text in UTF-8 files recursively.
 
     Search recursively by filename pattern and return matching lines.
+
+    Relative paths start inside the server's project root.
     """
-    root = Path(directory).expanduser().resolve()
+
+    root = resolve_path(value=directory)
 
     if not root.is_dir():
         raise ValueError(f"Not a directory: {directory}")
@@ -101,8 +122,11 @@ def read_file(
 
     Line numbers start at 1. Omit end_line to read through the end.
     Returns at most 10,000 characters.
+
+    Relative paths start inside the server's project root.
     """
-    path = Path(file_path).expanduser().resolve()
+
+    path = resolve_path(value=file_path)
 
     if not path.is_file():
         raise ValueError(f"Not a file: {file_path}")
@@ -119,8 +143,12 @@ def read_file(
 
 @mcp.tool()
 def list_directory(directory: str) -> list[dict[str, str]]:
-    """List immediate directory entries with their name and types"""
-    root = Path(directory).expanduser().resolve()
+    """List immediate directory entries with their name and types.
+    
+    Relative paths start inside the server's project root.
+    """
+
+    root = resolve_path(value=directory)
 
     if not root.is_dir():
         raise ValueError(f"Not a directory: {directory}")
@@ -138,13 +166,14 @@ def list_directory(directory: str) -> list[dict[str, str]]:
 def project_guide() -> str:
     """Return the setup guide for this project"""
 
-    path = Path(__file__).resolve().parent / "GUIDE.md"
+    path = ROOT / "GUIDE.md"
     return path.read_text(encoding="utf-8")
 
 
 @mcp.resource("project://overview", name="Project Overview")
 def project_overview() -> str:
     """A brief description of this project."""
+
     return (
         "File searcher is an MCP server for finding files, searching their "
         "contents, reading text, and inspecting file metadata."
@@ -153,18 +182,30 @@ def project_overview() -> str:
 
 @mcp.prompt()
 def explain_file(file_path: str) -> str:
-    """Create instructions for explaining a file"""
+    """Create instructions for explaining a file.
+    
+    Relative paths start inside the server's project root.
+    """
+
+    path = resolve_path(value=file_path)
+
     return (
-        f"Read the file at {file_path} using the read_file tool, "
+        f"Read the file at {path} using the read_file tool, "
         "then explain its purpose and main components in plain language"
     )
 
 
 @mcp.prompt()
 def find_implementation(topic: str, directory: str = ".") -> str:
-    """Create a workflow for finding and explaining an implementation."""
+    """Create a workflow for finding and explaining an implementation.
+    
+    Relative paths start inside the server's project root.
+    """
+
+    path = resolve_path(value=directory)
+
     return (
-        f"Find where {topic!r} is implemented in {directory!r}.\n"
+        f"Find where {topic!r} is implemented in {path!r}.\n"
         "1. Use list_directory to inspect the project structure.\n"
         "2. Use search_files to locate relevant source files.\n"
         "3. Use search_text to find relevant code and line numbers.\n"
