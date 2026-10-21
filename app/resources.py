@@ -4,9 +4,9 @@ from app.paths import ROOT
 
 
 def project_guide() -> str:
-    """Return the setup guide for this project"""
+    """Return the README for this project."""
 
-    path = ROOT / "GUIDE.md"
+    path = ROOT / "README.md"
     return path.read_text(encoding="utf-8")
 
 
