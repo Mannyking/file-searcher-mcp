@@ -1,0 +1,11 @@
+{
+  "servers": {
+    "file-searcher": {
+      "transport": "stdio",
+      "command": "/absolute/path/to/uv",
+      "args": ["run", "mcp", "run", "server.py"],
+      "cwd": "/absolute/path/to/file-searcher-mcp",
+      "enabled": true
+    }
+  }
+}
